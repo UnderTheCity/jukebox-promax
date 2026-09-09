@@ -1,3 +1,17 @@
+PS template-mod-template-1.21.11> git push -u origin main --force
+Enumerating objects: 58, done.
+Counting objects: 100% (58/58), done.
+Delta compression using up to 32 threads
+Compressing objects: 100% (47/47), done.
+Writing objects: 100% (58/58), 77.84 KiB | 5.56 MiB/s, done.
+Total 58 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), done.
+To https://github.com/UnderTheCity/jukebox-promax.git
+ + 72a9e74...cd60045 main -> main (forced update)
+branch 'main' set up to track 'origin/main'.
+PS template-mod-template-1.21.11> 
+
+
 # Jukebox Global Sound（唱片机全局音效 + 自定义音乐/歌单）
 
 Fabric 1.21.11 模组。Mojang 官方映射、Java 21、Fabric API 0.141.6+1.21.11。
