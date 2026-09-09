@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "template-mod",
+	"version": "${version}",
+	"name": "Jukebox Global Sound",
+	"description": "唱片机声音全局化（无视距离、双耳等响、不受立体音效影响），且支持给原版唱片铁砧重命名后播放存档目录下同名 OGG 音乐。",
+	"authors": [
+		"example"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/template-mod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.example.TemplateMod"
+		],
+		"client": [
+			"com.example.TemplateModClient"
+		]
+	},
+	"mixins": [
+		"template-mod.mixins.json",
+		{
+			"config": "template-mod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.17.3",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
