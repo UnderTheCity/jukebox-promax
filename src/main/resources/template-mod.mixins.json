@@ -1,8 +1,18 @@
 {
 	"required": true,
 	"package": "com.example.mixin",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_8",
 	"mixins": [],
+	"client": [
+		"client.AnvilRenameHintMixin",
+		"client.ChatTdMixin",
+		"client.ClientTickMixin",
+		"client.JukeboxBlockEntityMixin",
+		"client.LevelRendererStopMixin",
+		"client.PlaybackControlMixin",
+		"client.RecordSoundGlobalizerMixin",
+		"client.SoundBufferLibraryMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	},

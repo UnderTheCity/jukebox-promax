@@ -1,12 +1,11 @@
 package com.example.client.sound;
 
 import com.example.TemplateMod;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +19,7 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 /**
- * 统一的非原版唱片播放管理器（全局单实例）。
+ * 统一的非原版唱片播放管理器（全局单实例，1.16.4 版，Java 8 兼容）。
  *
  * 特性：
  * <ul>
@@ -30,6 +29,9 @@ import java.util.stream.Stream;
  *   <li>唱片被取出/方块被拆（服务端即时信号）→ 立即停止。</li>
  *   <li>"正在播放"标题显示实际曲目名。</li>
  * </ul>
+ *
+ * 1.16.4 不依赖 fabric 事件：{@link #instance()} 仅在首次真正需要时创建，
+ * 由 {@link com.example.mixin.client.ClientTickMixin} 每 tick 调用 {@link #tick()}。
  */
 public final class DiscPlaybackManager {
 
@@ -44,7 +46,7 @@ public final class DiscPlaybackManager {
 	// 当前激活会话
 	private BlockPos activePos;
 	private boolean playlist;              // true=歌单, false=单曲
-	private List<Path> tracks = new ArrayList<>();
+	private List<Path> tracks = new ArrayList<Path>();
 	private int index;
 	private boolean shuffle;               // 随机模式
 	private boolean repeat = true;         // 是否循环（false = 单次）
@@ -56,6 +58,9 @@ public final class DiscPlaybackManager {
 	private boolean pausedByRedstone;
 	private int redstonePollTicks;
 
+	// 区块卸载检测降频计数
+	private int chunkPollTicks;
+
 	private SimpleSoundInstance current;
 	private boolean firstStarted;          // 当前曲是否已真正开始过（避免启动异步误判切曲）
 
@@ -63,10 +68,10 @@ public final class DiscPlaybackManager {
 		this.minecraft = minecraft;
 	}
 
+	/** 懒创建单例（Minecraft 就绪后调用）。 */
 	public static DiscPlaybackManager instance() {
 		if (INSTANCE == null) {
 			INSTANCE = new DiscPlaybackManager(Minecraft.getInstance());
-			ClientTickEvents.END_CLIENT_TICK.register(INSTANCE::tick);
 		}
 		return INSTANCE;
 	}
@@ -103,7 +108,7 @@ public final class DiscPlaybackManager {
 		DiscStopCache.clear(); // 清除可能残留的"已取出"标记，防止新播放被立即误停
 		this.activePos = pos;
 		this.playlist = false;
-		this.tracks = new ArrayList<>();
+		this.tracks = new ArrayList<Path>();
 		this.tracks.add(file);
 		this.index = 0;
 		this.shuffle = false;
@@ -181,7 +186,8 @@ public final class DiscPlaybackManager {
 		}
 	}
 
-	private void tick(Minecraft client) {
+	/** 由客户端 tick mixin 每 tick 调用（渲染/主线程）。 */
+	public void tick() {
 		if (current == null) {
 			return;
 		}
@@ -192,11 +198,20 @@ public final class DiscPlaybackManager {
 				stop(activePos);
 				return;
 			}
+			// 区块卸载：自定义音乐不随距离衰减，若唱片机所在区块已不在加载范围就停掉（降频每 20 tick）。
+			if (++chunkPollTicks >= 20) {
+				chunkPollTicks = 0;
+				if (minecraft.level == null || !minecraft.level.isLoaded(activePos)) {
+					TemplateMod.LOGGER.info("[jukebox-mgr] 唱片机区块已卸载，停止 at {}", activePos);
+					stop(activePos);
+					return;
+				}
+			}
 			// 红石开关：充能(>0)暂停、失能(0)恢复。降频每 5 tick 检测。
 			if (++redstonePollTicks >= 5) {
 				redstonePollTicks = 0;
-				if (client.level != null) {
-					boolean powered = client.level.getBestNeighborSignal(activePos) > 0;
+				if (minecraft.level != null) {
+					boolean powered = minecraft.level.getBestNeighborSignal(activePos) > 0;
 					updateRedstoneSwitch(activePos, powered);
 				}
 			}
@@ -292,7 +307,7 @@ public final class DiscPlaybackManager {
 			if (name.toLowerCase(Locale.ROOT).endsWith(".ogg")) {
 				name = name.substring(0, name.length() - 4);
 			}
-			minecraft.gui.setNowPlaying(Component.literal(name));
+			minecraft.gui.setNowPlaying(new TextComponent(name));
 		} catch (Throwable t) {
 			// 忽略：仅显示用途，失败不影响播放
 		}
@@ -314,23 +329,39 @@ public final class DiscPlaybackManager {
 		volumeScale = 1.0f;
 		pausedByRedstone = false;
 		redstonePollTicks = 0;
+		chunkPollTicks = 0;
 		firstStarted = false;
 	}
 
 	/** 列出文件夹内全部 .ogg（字典序）。 */
 	public static List<Path> listOggs(Path folderDir) {
-		List<Path> files = new ArrayList<>();
+		List<Path> files = new ArrayList<Path>();
 		if (folderDir == null || !Files.isDirectory(folderDir)) {
 			return files;
 		}
-		try (Stream<Path> s = Files.list(folderDir)) {
+		Stream<Path> s = null;
+		try {
+			s = Files.list(folderDir);
 			s.filter(Files::isRegularFile)
 					.filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ogg"))
-					.sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
+					.sorted(new Comparator<Path>() {
+						public int compare(Path a, Path b) {
+							return a.getFileName().toString().toLowerCase(Locale.ROOT)
+									.compareTo(b.getFileName().toString().toLowerCase(Locale.ROOT));
+						}
+					})
 					.forEach(files::add);
 		} catch (IOException e) {
 			TemplateMod.LOGGER.error("[jukebox-mgr] 读取歌单目录失败 {}", folderDir, e);
+		} finally {
+			closeQuietly(s);
 		}
 		return files;
+	}
+
+	private static void closeQuietly(Stream<Path> s) {
+		if (s != null) {
+			s.close(); // Stream.close() 不抛受检异常
+		}
 	}
 }

@@ -1,0 +1,11 @@
+{
+  "custom": {
+    "subtitle": "subtitles.record_jukebox.custom",
+    "sounds": [
+      {
+        "name": "record_jukebox:empty",
+        "stream": true
+      }
+    ]
+  }
+}

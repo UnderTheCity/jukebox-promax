@@ -16,7 +16,7 @@ import java.util.Properties;
  */
 public final class HintConfig {
 
-	private static final String FILE = "template-mod.properties";
+	private static final String FILE = "record-jukebox.properties";
 	private static final String KEY_SHOW_HINTS = "show-rename-hints";
 
 	private static boolean showHints = true;
@@ -66,7 +66,7 @@ public final class HintConfig {
 			Properties p = new Properties();
 			p.setProperty(KEY_SHOW_HINTS, Boolean.toString(showHints));
 			try (OutputStream out = Files.newOutputStream(file)) {
-				p.store(out, "Jukebox Global Sound config");
+				p.store(out, "Record Jukebox config");
 			}
 		} catch (IOException e) {
 			TemplateMod.LOGGER.warn("[jukebox] 保存配置失败", e);

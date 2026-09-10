@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 解析唱片自定义名的"标签式"格式：
+ * 解析唱片自定义名的"标签式"格式（1.16.4 版，Java 8 兼容，无 record）。
  * <pre>
  *   X                     → 顺序 + 循环
  *   X 顺序                → 顺序 + 循环
@@ -24,9 +24,44 @@ import java.util.Locale;
  */
 public final class DiscNameParser {
 
-	public record Parsed(String baseName, boolean shuffle, boolean repeat, long timerTicks, float volumeScale) {
+	/** 解析结果（Java 8 无 record，用不可变内部类）。 */
+	public static final class Parsed {
+		private final String baseName;
+		private final boolean shuffle;
+		private final boolean repeat;
+		private final long timerTicks;
+		private final float volumeScale;
+
+		Parsed(String baseName, boolean shuffle, boolean repeat, long timerTicks, float volumeScale) {
+			this.baseName = baseName;
+			this.shuffle = shuffle;
+			this.repeat = repeat;
+			this.timerTicks = timerTicks;
+			this.volumeScale = volumeScale;
+		}
+
+		public String baseName() {
+			return baseName;
+		}
+
+		public boolean shuffle() {
+			return shuffle;
+		}
+
+		public boolean repeat() {
+			return repeat;
+		}
+
 		public boolean singleShot() {
 			return !repeat;
+		}
+
+		public long timerTicks() {
+			return timerTicks;
+		}
+
+		public float volumeScale() {
+			return volumeScale;
 		}
 	}
 
@@ -41,7 +76,10 @@ public final class DiscNameParser {
 		if (parts.length == 0 || parts[0].isEmpty()) {
 			return null;
 		}
-		List<String> words = new ArrayList<>(List.of(parts));
+		List<String> words = new ArrayList<String>();
+		for (String p : parts) {
+			words.add(p);
+		}
 
 		boolean shuffle = false;
 		boolean repeat = true;
@@ -72,26 +110,22 @@ public final class DiscNameParser {
 				continue;
 			}
 			// 模式
-			switch (last) {
-				case "随机", "乱序", "random", "shuffle", "rand" -> {
-					shuffle = true;
-					words.remove(words.size() - 1);
-					changed = true;
-				}
-				case "单次", "一次", "once", "single", "single-shot" -> {
-					repeat = false;
-					words.remove(words.size() - 1);
-					changed = true;
-				}
-				case "顺序", "列表", "list", "sequence", "seq", "order" -> {
-					shuffle = false;
-					repeat = true;
-					words.remove(words.size() - 1);
-					changed = true;
-				}
-				default -> {
-					// 不是已知标签，停止剥离
-				}
+			if (last.equals("随机") || last.equals("乱序") || last.equals("random")
+					|| last.equals("shuffle") || last.equals("rand")) {
+				shuffle = true;
+				words.remove(words.size() - 1);
+				changed = true;
+			} else if (last.equals("单次") || last.equals("一次") || last.equals("once")
+					|| last.equals("single") || last.equals("single-shot")) {
+				repeat = false;
+				words.remove(words.size() - 1);
+				changed = true;
+			} else if (last.equals("顺序") || last.equals("列表") || last.equals("list")
+					|| last.equals("sequence") || last.equals("seq") || last.equals("order")) {
+				shuffle = false;
+				repeat = true;
+				words.remove(words.size() - 1);
+				changed = true;
 			}
 		}
 
@@ -151,13 +185,14 @@ public final class DiscNameParser {
 					return 0;
 				}
 				int n = Integer.parseInt(num.toString());
-				switch (c) {
-					case 'h' -> totalSeconds += n * 3600L;
-					case 'm' -> totalSeconds += n * 60L;
-					case 's' -> totalSeconds += n;
-					default -> {
-						return 0;
-					}
+				if (c == 'h') {
+					totalSeconds += n * 3600L;
+				} else if (c == 'm') {
+					totalSeconds += n * 60L;
+				} else if (c == 's') {
+					totalSeconds += n;
+				} else {
+					return 0;
 				}
 				num.setLength(0);
 				any = true;
