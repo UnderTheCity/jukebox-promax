@@ -3,9 +3,10 @@ package com.example.client.sound;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.RecordItem;
 
 /**
- * 游戏内引导提示。
+ * 游戏内引导提示（1.20.1 版）。
  *
  * 在铁砧给唱片改名成功后，于聊天栏打印一段"简易格式说明"；
  * 提示顶部附带"输入 td 不再显示"提示。玩家发送 td 后写入配置永久关闭。
@@ -16,7 +17,7 @@ public final class RenameHintSender {
 	}
 
 	/**
-	 * 处理玩家输入的"td"。返回 true 表示已消费（不再作为聊天发出）。
+	 * 处理玩家输入的 "td" / "/template-mod hints on|off"。返回 true 表示已消费（不再发送）。
 	 */
 	public static boolean handleTdCommand(String raw) {
 		String msg = raw == null ? "" : raw.trim();
@@ -29,7 +30,6 @@ public final class RenameHintSender {
 			}
 			return true;
 		}
-		// 也支持 /template-mod hints on|off 命令形式
 		if (msg.startsWith("/template-mod hints")) {
 			boolean on = msg.contains("on") && !msg.contains("off");
 			HintConfig.setShowHints(on);
@@ -45,7 +45,7 @@ public final class RenameHintSender {
 
 	/** 检测一个物品是否为"可播放的唱片"。 */
 	public static boolean isDisc(ItemStack stack) {
-		return stack != null && !stack.isEmpty() && stack.has(net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE);
+		return stack != null && !stack.isEmpty() && stack.getItem() instanceof RecordItem;
 	}
 
 	/** 输出改名成功后的提示。 */

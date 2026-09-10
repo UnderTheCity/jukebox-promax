@@ -1,13 +1,15 @@
 {
 	"required": true,
 	"package": "com.example.mixin.client",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_17",
 	"client": [
+		"AnvilRenameHintMixin",
+		"ChatTdMixin",
+		"LevelRendererStopMixin",
 		"RecordSoundGlobalizerMixin",
-		"CustomDiscJukeboxMixin",
-		"JukeboxSongPlayerMixin",
-		"JukeboxBlockEntityMixin",
-		"AnvilRenameHintMixin"
+		"SoundBufferLibraryMixin",
+		"PlaybackControlMixin",
+		"JukeboxBlockEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

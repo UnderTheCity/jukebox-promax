@@ -2,13 +2,15 @@ package com.example.client.sound;
 
 import com.example.TemplateMod;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 /**
- * 音乐目录与文件匹配辅助。
+ * 音乐目录与文件匹配辅助（1.20.1 版）。
  *
  * 目录：{@code <gameDirectory>/jukebox}（不存在自动创建）。
  * 匹配名 X 对应：
@@ -19,14 +21,13 @@ import java.nio.file.Path;
  */
 public final class RenamedDiscMusic {
 
-	/** 音乐根目录名（相对 Minecraft gameDirectory）。 */
 	public static final String MUSIC_FOLDER = "jukebox";
 
 	private RenamedDiscMusic() {
 	}
 
 	/** 取当前自定义名（坐标匹配来自服务端缓存），无则 null。 */
-	public static String customNameAt(net.minecraft.core.BlockPos pos) {
+	public static String customNameAt(BlockPos pos) {
 		String name = DiscNameCache.take(pos);
 		return (name == null || name.isBlank()) ? null : name;
 	}
@@ -69,7 +70,7 @@ public final class RenamedDiscMusic {
 			Files.createDirectories(dir);
 			return dir;
 		} catch (IOException e) {
-			TemplateMod.LOGGER.error("[jukebox] 创建目录失败 {}", dir, e);
+			TemplateMod.LOGGER.error("[record-jukebox] 创建目录失败 {}", dir, e);
 			return mc.gameDirectory.toPath();
 		}
 	}

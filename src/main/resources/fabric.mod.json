@@ -1,14 +1,14 @@
 {
 	"schemaVersion": 1,
-	"id": "template-mod",
+	"id": "record_jukebox",
 	"version": "${version}",
-	"name": "Jukebox Global Sound",
-	"description": "唱片机声音全局化（无视距离、双耳等响、不受立体音效影响），且支持给原版唱片铁砧重命名后播放存档目录下同名 OGG 音乐。",
+	"name": "Record Jukebox",
+	"description": "把唱片机变成真正的音乐播放器：无视距离的立体声音乐，铁砧给唱片改名即可播放你自己放进 jukebox 文件夹的 .ogg（单曲/歌单），还支持顺序/随机/单次/定时与音量标签。",
 	"authors": [
 		"example"
 	],
 	"license": "CC0-1.0",
-	"icon": "assets/template-mod/icon.png",
+	"icon": "assets/record_jukebox/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -26,9 +26,9 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.16.0",
-		"minecraft": ">=1.21.11 <1.22",
-		"java": ">=21",
+		"fabricloader": ">=0.14.0",
+		"minecraft": ">=1.20.1 <1.20.5",
+		"java": ">=17",
 		"fabric-api": "*"
 	}
 }

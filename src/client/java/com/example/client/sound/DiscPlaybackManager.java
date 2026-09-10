@@ -56,6 +56,9 @@ public final class DiscPlaybackManager {
 	private boolean pausedByRedstone;
 	private int redstonePollTicks;
 
+	// 区块卸载检测降频计数
+	private int chunkPollTicks;
+
 	private SimpleSoundInstance current;
 	private boolean firstStarted;          // 当前曲是否已真正开始过（避免启动异步误判切曲）
 
@@ -192,6 +195,15 @@ public final class DiscPlaybackManager {
 				stop(activePos);
 				return;
 			}
+			// 区块卸载：自定义音乐不随距离衰减，若唱片机所在区块已不在加载范围就停掉（降频每 20 tick）。
+			if (++chunkPollTicks >= 20) {
+				chunkPollTicks = 0;
+				if (client.level == null || !client.level.isLoaded(activePos)) {
+					TemplateMod.LOGGER.info("[jukebox-mgr] 唱片机区块已卸载，停止 at {}", activePos);
+					stop(activePos);
+					return;
+				}
+			}
 			// 红石开关：充能(>0)暂停、失能(0)恢复。降频每 5 tick 检测。
 			if (++redstonePollTicks >= 5) {
 				redstonePollTicks = 0;
@@ -314,6 +326,7 @@ public final class DiscPlaybackManager {
 		volumeScale = 1.0f;
 		pausedByRedstone = false;
 		redstonePollTicks = 0;
+		chunkPollTicks = 0;
 		firstStarted = false;
 	}
 
